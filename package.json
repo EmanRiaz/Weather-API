@@ -1,0 +1,18 @@
+{
+  "name": "weather-api",
+  "version": "1.0.0",
+  "description": "Show dynamic weather details\r <br>\r Author-Eman Riaz",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "Weather-API"
+  },
+  "author": "Eman",
+  "license": "ISC",
+  "dependencies": {
+    "request": "^2.88.2"
+  }
+}
