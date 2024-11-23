@@ -1,38 +1,43 @@
+require("dotenv").config();
 const http = require("http");
 const fs = require("fs");
 const requests = require("requests");
 
+const apiKey = process.env.OPENWEATHER_API_KEY;
 const homeFile = fs.readFileSync("home.html", "utf-8");
 
 const replaceVal = (tempVal, orgVal) => {
-    let temperature = tempVal.replace("{%tempval%}", orgVal.main.temp);
-    temperature = temperature.replace("{%tempmin%}", orgVal.main.temp_min);
-    temperature = temperature.replace("{%tempmax%}", orgVal.main.temp_max);
-    temperature = temperature.replace("{%location%}", orgVal.name);
-    temperature = temperature.replace("{%tempcountry%}", orgVal.sys.country);
-    temperature = temperature.replace("{%tempstatus%}", orgVal.weather[0].main);
+    if (!orgVal || !orgVal.main || !orgVal.sys || !orgVal.weather) {
+        console.error("Invalid data from API", orgVal);
+        return tempVal;
+    }
 
-    return temperature;
+    return tempVal
+        .replace("{%tempval%}", orgVal.main.temp || "N/A")
+        .replace("{%tempmin%}", orgVal.main.temp_min || "N/A")
+        .replace("{%tempmax%}", orgVal.main.temp_max || "N/A")
+        .replace("{%location%}", orgVal.name || "Unknown Location")
+        .replace("{%tempcountry%}", orgVal.sys.country || "Unknown Country")
+        .replace("{%tempstatus%}", orgVal.weather[0]?.main || "Unknown");
 };
 
 const server = http.createServer((req, res) => {
     if (req.url === "/") {
-        requests("http://api.openweathermap.org/data/2.5/weather?q=Lahore&appid=4600bf6159b019d27fa51c88a40b86c0&units=metric")
+        requests(`http://api.openweathermap.org/data/2.5/weather?q=Lahore&appid=${apiKey}&units=metric`)
             .on("data", (chunk) => {
-                const objdata = JSON.parse(chunk);
-                const realTimeData = replaceVal(homeFile, objdata);
-                res.write(realTimeData);
+                const objData = JSON.parse(chunk);
+                const realTimeData = replaceVal(homeFile, objData);
+                res.writeHead(200, { "Content-Type": "text/html" });
+                res.end(realTimeData);
             })
             .on("end", (err) => {
                 if (err) {
-                    console.log("Connection closed due to errors", err);
+                    console.error("Connection closed due to errors", err);
                 }
-                res.end();
             });
     } else {
         res.writeHead(404, { "Content-Type": "text/plain" });
-        res.write("404 Not Found");
-        res.end();
+        res.end("404 Not Found");
     }
 });
 
